@@ -1,0 +1,23 @@
+name: Demo9
+
+on:
+
+  # This workflow will run after Example8 completed
+  # https://chat.openai.com/c/9f40bf08-22e3-4822-8f05-fe4350946c2f
+  workflow_run:
+    branches: main
+    workflows: ['Example8']
+    types:
+      - completed
+
+jobs:
+  hello:
+    name: some title here #TODO: Change title
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        run: echo 'Hello, World!'

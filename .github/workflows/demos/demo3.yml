@@ -1,0 +1,32 @@
+name: Demo3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+
+  #workflow_dispatch: {}
+  #schedule:
+  #- cron: '0 0 * * 0' # https://crontab.guru/
+
+  #defaults:
+  #run:
+  #working-directory: ./scripts/
+
+jobs:
+  demo-1-bash:
+    name: my demo1
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run bash script
+        # or bash ./scripts/script1.sh arg1 arg2
+        run: bash ${GITHUB_WORKSPACE}/scripts/script1.sh arg1 arg2
+        env:
+          MY_TOKEN1: ${{ secrets.MY_TOKEN1 }} # You can use it in your script1.sh by reading it or passing it as an argument
+

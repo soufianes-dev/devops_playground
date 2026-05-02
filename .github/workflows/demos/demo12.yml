@@ -1,0 +1,16 @@
+name: Demo12
+
+on:
+  issues:
+    types:
+      - opened
+      - labeled
+
+jobs:
+  first-job: # job name can be anything test, build, deploy, release, etc
+    runs-on: ubuntu-latest #or windows-latest
+
+    steps:
+      - run: echo $Full_Name
+        env:
+            Full_Name: "Soufiane Saadouni"

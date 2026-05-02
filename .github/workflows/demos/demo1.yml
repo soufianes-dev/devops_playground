@@ -1,0 +1,22 @@
+# https://www.youtube.com/watch?v=mah8PV6ugNY&list=TLPQMTExMTIwMjNEyF5vqgReZg&index=8
+name: Demo1 # name can be anything  # Optional
+run-name: ${{ github.actor }} is learning Github Actions  # Optional
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**' # ** means wildcard to match child folders or files
+  pull_request:
+    branches: '*' #all branches or [develop] # or main
+    paths:
+      - 'src/**'
+
+jobs:
+  first-job: # job name can be anything test, build, deploy, release, etc
+    runs-on: ubuntu-latest #or windows-latest
+
+    steps:
+      - run: node --version
+      - run: npm --version

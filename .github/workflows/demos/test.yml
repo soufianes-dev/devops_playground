@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**' # ** means wildcard to match child folders or files
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**' # ** means wildcard to match child folders or files
+  #pull_request:
+  #branches: '*' #all branches
+  #pull_request:
+  #branches: [develop] # develop or main etc
+
+permissions: read-all
+
+jobs:
+  unit-test: # job name can be anything test, build, deploy, release, etc
+    name: my unit tests
+
+    runs-on: ubuntu-latest #or windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: . # To fetch root files
+      - run: cat README.md # Print content of the file
+
+  integration-test:
+    name: my integration tests
+    runs-on: ubuntu-latest #or windows-latest
+
+    steps:
+      - name: Some command
+        run: |
+          echo line1
+          echo line2
+
+  benchmark-test:
+    name: my benchmark tests
+    runs-on: ubuntu-latest #or windows-latest
+
+    steps:
+      - name: Some command
+        run: |
+          echo line1
+          echo line2
+
+  another-test1:
+    name: my another test1
+    runs-on: ubuntu-latest #or windows-latest
+
+    steps:
+      - name: Some command
+        run: |
+          echo line1
+          echo line2

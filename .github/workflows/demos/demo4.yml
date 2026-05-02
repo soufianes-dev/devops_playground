@@ -1,0 +1,49 @@
+name: Demo4
+
+on:
+  # To support manual triggering for this workflow
+  workflow_dispatch: {}
+
+  # To schedule a job
+  # Can be used for example for backup purpuses
+  # Can be used to deploy nightly builds
+  schedule:
+    - cron: '0 0 * * 0' # https://crontab.guru/
+
+  #defaults:
+  #run:
+  #working-directory: ./scripts/
+
+jobs:
+  backup:
+    name: Do something
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./scripts
+
+    steps:
+      - name: Checkout the repository to the runner
+        uses: actions/checkout@v4
+
+      - name: Run backup bash script 1
+        run: bash ${GITHUB_WORKSPACE}/scripts/backup.sh # We don't need working-directory: ./scripts
+
+        # Another way
+      - name: Run backup bash script 2
+        run: bash ./backup.sh
+
+        # To make backup.sh executable without using bash interpreter
+      - name: Make script files executable
+        run: chmod +x ./backup.sh ./script.sh # Etc
+
+        # Another way
+      - name: Run backup bash script 3
+        run: ./backup.sh
+
+        # Another way
+      - name: Run backup bash script 4
+        run: ./scripts/backup.sh

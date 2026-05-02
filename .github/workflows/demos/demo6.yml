@@ -1,0 +1,34 @@
+name: Demo6
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'src/**'
+  pull_request:
+    branches: main
+    paths:
+      - 'src/**'
+
+jobs:
+  build:
+    name: This is build job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print message1
+        run: echo "Building step . . ."
+
+  deploy:
+    name: This is deploy job
+    runs-on: ubuntu-latest
+    # This is a condition
+    needs: build
+
+    steps:
+      - name: Print message2
+        if: github.event_name == 'push' && github.ref == 'refs/head/main'
+        run: echo "Deploying step . . ."
+      - name: Notification
+        if: success()
+        run: echo "Deployment has completed successfully!"

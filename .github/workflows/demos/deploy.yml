@@ -1,0 +1,16 @@
+name: Deploy
+
+# This workflow will run when a release created 
+on:
+  release:
+    types: [created]
+
+jobs:
+  Build:
+    # You can deploy/upload it to AppStore, cloud etc...
+    #
+    name: Deploy release artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4

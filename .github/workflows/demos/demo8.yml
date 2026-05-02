@@ -1,0 +1,51 @@
+name: Demo8
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'src/**'
+  pull_request:
+    branches: main
+    paths:
+      - 'src/**'
+
+jobs:
+  build:
+    name: This is job1
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create a directory
+        run: mkdir build
+
+      - name: Build project
+        run: echo 'Hello, World! This is an artifact!!!' > build/artifact.apk #TODO: Build command here
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact.apk #TODO: Artifact name here
+          path: build/artifact.apk #TODO: Path of the artifact
+
+  deploy:
+    name: This is job2
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact.apk #TODO: Artifact name here
+          path: build
+
+      - name: Display the structure of downloaded artifacts/files
+        run: ls -R
+        working-directory: build

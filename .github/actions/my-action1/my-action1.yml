@@ -1,0 +1,13 @@
+name: My action1
+description: This is my custom action1
+
+inputs:
+  my-var1:
+    description: 'this is var1'
+    required: true
+  my-var2:
+    description: 'this is var2'
+    required: false
+runs:
+  using: 'local'
+  command: './.github/actions/my-action1/script1.sh'

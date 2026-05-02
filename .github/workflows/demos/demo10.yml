@@ -1,0 +1,31 @@
+name: Demo10
+
+# https://chat.openai.com/c/ef9563f6-0a6b-4660-8ab5-da8a7ce7f082
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+  pull_request:
+    branches: '*'
+    paths:
+      - 'src/**'
+
+jobs:
+  my-first-job: # job name can be anything test, build, deploy, release, etc
+    runs-on: ubuntu-latest #or windows-latest
+
+    steps:
+      - uses: actions/checkout@v4 # https://github.com/actions/checkout
+      - name: Print hello
+        run: |
+          echo 'Hello, World!'
+
+      # https://docs.github.com/en/actions/learn-github-actions/finding-and-customizing-actions
+      # This step references directory that contains the action
+      - name: Use local my-action1
+        uses: ./.github/actions/my-action1/my-action1.yml
+        with:
+          my-var1: 'Soufiane'

@@ -1,0 +1,263 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+      # paths:
+      #   - "src/**"
+      #   - "tests/**"
+      #   - "package.json"
+      # Skip this workflow when one of those files changed
+    paths-ignore:
+      - "docs/**"
+      - "assets/**"
+      - "test/**"
+      - "maestro/**"
+      - "test_driver/**"
+      - "integration_test/**"
+      - ".github/**" # `/**` means Recursive
+      - "screenshots/**"
+      - "**.md"
+      - "*.log"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".env.example"
+      - "CODEOWNERS"
+      - "LICENSE"
+      - "design/**"
+      - "screenshots/**"
+      - "storybook/**"
+      - ".vscode/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      force_version:
+        description: "Force a specific version (overrides auto-detection)"
+        required: false
+        type: string
+      dry_run:
+        description: "Run without actually creating a release"
+        required: false
+        type: boolean
+        default: false
+env:
+  GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+  GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+  GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GIT_AUTHOR_NAME: ${{ vars.GIT_AUTHOR_NAME }}
+  GIT_AUTHOR_EMAIL: ${{ secrets.GIT_AUTHOR_EMAIL }}
+  USERNAME: ${{ github.repository_owner }}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
+
+# Prevent concurrent releases
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+
+  lint:
+    name: Start linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Lint codebase
+        run: |
+          echo "Linting..."
+          # Your lint command here
+
+  test:
+    needs: [ lint ]
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Create a directory
+        run: mkdir -p ${{ github.workspace }}/artifacts
+
+      - name: Run tests
+        run: |
+          echo "Running tests (Integration and unit tests)..."
+          # TODO: Add actual test runner command here
+          # If tests fails exit
+          # exit 1
+
+  setup:
+    needs: [ lint, test ]
+    runs-on: ubuntu-latest
+    outputs:
+      is_pre_release: ${{ steps.set_vars.outputs.is_pre_release}}
+      latest_tag: ${{ steps.set_vars.outputs.latest_tag}}
+      next_tag: ${{ steps.set_vars.outputs.next_tag}}
+      should_release: ${{ steps.set_vars.outputs.should_release}}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup
+        id: set_vars
+        run: |
+          chmod +x .github/scripts/main.sh
+          .github/scripts/main.sh setup
+
+      - name: Uploading changelog
+        if: steps.set_vars.outputs.should_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: ${{ github.workspace }}/CHANGELOG.md
+          retention-days: 1
+
+  build:
+    needs: [ lint, test, setup ]
+    if: needs.setup.outputs.should_release == 'true'
+    name: Build artifacts
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        artifact:
+          [
+            "artifact1-v${{ needs.setup.outputs.next_tag }}.js",
+            "artifact2-v${{ needs.setup.outputs.next_tag }}.txt",
+          ]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create a directory
+        run: mkdir -p ${{ github.workspace }}/build/artifacts
+
+      - name: Build project
+        run: echo 'Hello, World! This is an artifact!!!' > ${{ github.workspace
+          }}/build/artifacts/${{ matrix.artifact }}
+
+      - name: Uploading artifact ${{ matrix.artifact }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ github.workspace }}/build/artifacts/${{ matrix.artifact }}
+
+  release:
+    if: success() && github.ref == 'refs/heads/main' &&
+      needs.setup.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    needs: [ lint, test, setup, build ]
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Downloading changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: ${{ github.workspace }}
+
+      - name: Create a directory
+        run: mkdir -p ${{ github.workspace }}/build/artifacts
+
+      - name: Downloading artifact1
+        uses: actions/download-artifact@v4
+        with:
+          name: "artifact1-v${{ needs.setup.outputs.next_tag }}.js"
+          path: ${{ github.workspace }}/build/artifacts
+
+      - name: Downloading artifact2
+        uses: actions/download-artifact@v4
+        with:
+          name: "artifact2-v${{ needs.setup.outputs.next_tag }}.txt"
+          path: ${{ github.workspace }}/build/artifacts
+          # Run this command only when tests succeed or all jobs succeed
+      - name: Release
+        run: |
+          # Mask sensitive values before proceeding
+          echo "::add-mask::${{ secrets.GH_TOKEN }}"
+          echo "::add-mask::${{ secrets.GPG_PASSPHRASE }}"
+
+          export next_tag="${{ needs.setup.outputs.next_tag }}"
+          echo "next_tag=$next_tag"
+          export is_pre_release="${{ needs.setup.outputs.is_pre_release }}"
+          echo "is_pre_release=$is_pre_release"
+          export latest_tag="${{ needs.setup.outputs.latest_tag }}"
+          echo "latest_tag=$latest_tag"
+
+          # Use colon delimiter to handle spaces in paths
+          ARTIFACTS_PATHS=(
+            "${{ github.workspace }}/build/artifacts/artifact1-v$next_tag.js"
+            "${{ github.workspace }}/build/artifacts/artifact2-v$next_tag.txt"
+          )
+
+          # Verify artifacts exist before proceeding
+          for artifact in "${ARTIFACTS_PATHS[@]}"; do
+            if [ ! -f "$artifact" ]; then
+              echo "::error::Artifact not found: $artifact"
+              exit 1
+            fi
+          done
+
+          # Join array elements with colon delimiter for safer parsing
+          export ARTIFACTS_PATHS_STR=$(IFS=':'; echo "${ARTIFACTS_PATHS[*]}")
+
+          chmod +x .github/scripts/main.sh
+          .github/scripts/main.sh release
+
+  deploy:
+    needs: [ lint, test, setup, build, release ]
+    name: Start Deploying
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Downloading artifact1
+        uses: actions/download-artifact@v4
+        with:
+          name: "artifact1-v${{ needs.setup.outputs.next_tag }}.js"
+          path: ${{ github.workspace }}/build/artifacts
+
+      - name: Downloading artifact2
+        uses: actions/download-artifact@v4
+        with:
+          name: "artifact2-v${{ needs.setup.outputs.next_tag }}.txt"
+          path: ${{ github.workspace }}/build/artifacts
+
+      - name: Deploy artifacts
+        run: |
+          echo "Deploying..."
+          # Your deploy commands here

@@ -1,0 +1,69 @@
+name: Demo13
+
+on:
+  push:
+    branches: main
+    paths:
+      - 'src/**'
+  pull_request:
+    branches: main
+    paths:
+      - 'src/**'
+
+jobs:
+  build:
+    name: Build artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create a directory
+        run: mkdir -p $HOME/Downloads/artifacts
+
+      - name: Build project
+        run: |
+          echo 'Hello, World! This is an artifact1!!!' > $HOME/Downloads/artifacts/artifact1.js
+          echo 'Hello, World! This is an artifact2!!!' > $HOME/Downloads/artifacts/artifact2.txt
+
+  upload-artifacts:
+      name: Upload artifacts
+      runs-on: ubuntu-latest
+
+      strategy:
+        matrix:
+          artifact: [artifact1.js, artifact2.txt]
+
+      steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v4
+
+        - name: Uploading artifact ${{ matrix.artifact }}
+          uses: actions/upload-artifact@v4
+          with:
+            name: ${{ matrix.artifact }}
+            path: $HOME/Downloads/artifacts/${{ matrix.artifact }} #TODO: Path of the artifact
+
+  deploy:
+    name: This is job2
+    runs-on: ubuntu-latest
+    needs: build
+
+    strategy:
+      matrix:
+        artifact: [artifact-1, artifact-2, artifact-3]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Downloading artifact ${{ matrix.artifact }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: $HOME/Downloads/artifacts
+
+      - name: Display the structure of downloaded artifacts/files
+        run: ls -R $HOME/Downloads/artifacts
+        working-directory: $HOME/Downloads/artifacts

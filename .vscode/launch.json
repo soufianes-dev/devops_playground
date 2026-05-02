@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "bashdb",
+            "request": "launch",
+            "env": {
+                "GPG_KEY_ID": "${env:GPG_KEY_ID}",
+                "GPG_PASSPHRASE": "${env:GPG_PASSPHRASE}",
+                "GIT_USERNAME": "${env:GIT_USERNAME}",
+                "GIT_AUTHOR_EMAIL":"${env:GIT_AUTHOR_EMAIL}",
+                "GH_TOKEN":"${env:GH_TOKEN}",
+                "GIT_AUTHOR_NAME":"${env:GIT_AUTHOR_NAME}",
+                "GPG_PRIVATE_KEY": "${env:GPG_PRIVATE_KEY}",
+            },
+            "name": "Bash-Debug (type in script name)",
+            "cwd": "${workspaceFolder}",
+            "program": ".github/scripts/release.sh",
+            "args": []
+        }
+    ]
+}
